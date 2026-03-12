@@ -11,8 +11,8 @@ export default function AddRestaurant() {
 
   const handleSave = (restaurant: Restaurant) => {
     saveRestaurant(restaurant);
-    toast.success("Restaurant saved!");
-    navigate("/");
+    toast.success("Restaurant created!");
+    navigate(`/restaurant/${restaurant.id}`);
   };
 
   return (
@@ -23,6 +23,7 @@ export default function AddRestaurant() {
             <ArrowLeft className="w-4 h-4" /> Back
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">Add Restaurant</h1>
+          <p className="text-sm text-muted-foreground mt-1">Create a restaurant record, then log visits with dish ratings.</p>
         </div>
       </header>
       <main className="container max-w-3xl py-6">
