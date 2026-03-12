@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { getRestaurants, deleteRestaurant } from "@/lib/storage";
+import { getRestaurants } from "@/lib/storage";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
