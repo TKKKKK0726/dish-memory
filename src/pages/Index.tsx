@@ -1,16 +1,21 @@
 import { useState, useMemo } from "react";
 import { getRestaurants } from "@/lib/storage";
+import { seedIfEmpty } from "@/lib/seed";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, UtensilsCrossed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getOverallVerdict, PriceRange } from "@/lib/types";
 
 const Index = () => {
   const navigate = useNavigate();
+  seedIfEmpty();
+
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "return" | "avoid">("all");
+  const [verdictFilter, setVerdictFilter] = useState<"all" | "return" | "mixed" | "avoid">("all");
+  const [priceFilter, setPriceFilter] = useState<PriceRange | "all">("all");
   const restaurants = getRestaurants();
 
   const filtered = useMemo(() => {
@@ -24,10 +29,14 @@ const Index = () => {
           r.location.toLowerCase().includes(q)
       );
     }
-    if (filter === "return") result = result.filter((r) => r.wouldReturn);
-    if (filter === "avoid") result = result.filter((r) => !r.wouldReturn);
+    if (verdictFilter !== "all") {
+      result = result.filter((r) => getOverallVerdict(r) === verdictFilter);
+    }
+    if (priceFilter !== "all") {
+      result = result.filter((r) => r.priceRange === priceFilter);
+    }
     return result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }, [restaurants, search, filter]);
+  }, [restaurants, search, verdictFilter, priceFilter]);
 
   return (
     <div className="min-h-screen">
@@ -43,8 +52,8 @@ const Index = () => {
               <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">TasteVault</h1>
-              <p className="text-sm text-muted-foreground">Your personal restaurant journal</p>
+              <h1 className="text-2xl font-bold tracking-tight">DishLog</h1>
+              <p className="text-sm text-muted-foreground">Your personal restaurant memory</p>
             </div>
           </motion.div>
         </div>
@@ -52,26 +61,40 @@ const Index = () => {
 
       {/* Content */}
       <main className="container max-w-3xl py-6 space-y-5">
-        {/* Search & Filter bar */}
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search restaurants, cuisines, neighborhoods..."
+            className="pl-9"
+          />
+        </div>
+
+        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search restaurants, cuisines, locations..."
-              className="pl-9"
-            />
-          </div>
-          <div className="flex gap-2">
-            {(["all", "return", "avoid"] as const).map((f) => (
+          <div className="flex gap-2 flex-wrap">
+            {(["all", "return", "mixed", "avoid"] as const).map((f) => (
               <Button
                 key={f}
-                variant={filter === f ? "default" : "outline"}
+                variant={verdictFilter === f ? "default" : "outline"}
                 size="sm"
-                onClick={() => setFilter(f)}
+                onClick={() => setVerdictFilter(f)}
               >
-                {f === "all" ? "All" : f === "return" ? "Would Return" : "Avoid"}
+                {f === "all" ? "All" : f === "return" ? "Would Return" : f === "mixed" ? "Mixed" : "Avoid"}
+              </Button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            {(["all", "$", "$$", "$$$", "$$$$"] as const).map((p) => (
+              <Button
+                key={p}
+                variant={priceFilter === p ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPriceFilter(p)}
+              >
+                {p === "all" ? "Any Price" : p}
               </Button>
             ))}
           </div>
@@ -97,10 +120,10 @@ const Index = () => {
           >
             <UtensilsCrossed className="w-12 h-12 text-muted-foreground/40 mb-4" />
             <h2 className="text-xl font-display font-semibold text-muted-foreground">
-              {search || filter !== "all" ? "No restaurants found" : "No restaurants yet"}
+              {search || verdictFilter !== "all" || priceFilter !== "all" ? "No restaurants found" : "No restaurants yet"}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {search || filter !== "all"
+              {search || verdictFilter !== "all" || priceFilter !== "all"
                 ? "Try adjusting your search or filters"
                 : "Start by adding your first dining experience"}
             </p>

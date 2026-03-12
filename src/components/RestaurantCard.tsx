@@ -1,7 +1,7 @@
-import { Restaurant } from "@/lib/types";
+import { Restaurant, getAverageRating, getOverallVerdict, getReorderDishes, getLatestVisit } from "@/lib/types";
 import { StarRating } from "./StarRating";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Utensils, ThumbsUp, ThumbsDown } from "lucide-react";
+import { MapPin, Utensils, ThumbsUp, ThumbsDown, AlertTriangle, DollarSign, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -12,6 +12,19 @@ interface RestaurantCardProps {
 
 export function RestaurantCard({ restaurant, index }: RestaurantCardProps) {
   const navigate = useNavigate();
+  const avgRating = getAverageRating(restaurant);
+  const verdict = getOverallVerdict(restaurant);
+  const topDishes = getReorderDishes(restaurant).slice(0, 2);
+  const latestVisit = getLatestVisit(restaurant);
+
+  const verdictConfig = {
+    return: { label: "Worth Revisiting", icon: ThumbsUp, variant: "default" as const },
+    mixed: { label: "Mixed", icon: AlertTriangle, variant: "secondary" as const },
+    avoid: { label: "Avoid", icon: ThumbsDown, variant: "destructive" as const },
+    none: { label: "No Visits", icon: Utensils, variant: "outline" as const },
+  };
+
+  const v = verdictConfig[verdict];
 
   return (
     <motion.div
@@ -26,44 +39,56 @@ export function RestaurantCard({ restaurant, index }: RestaurantCardProps) {
           <h3 className="font-display text-lg font-semibold truncate text-card-foreground">
             {restaurant.name}
           </h3>
-          <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Utensils className="w-3.5 h-3.5" />
-              {restaurant.cuisine}
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5" />
-              {restaurant.location}
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            {restaurant.cuisine && (
+              <span className="flex items-center gap-1">
+                <Utensils className="w-3.5 h-3.5" />
+                {restaurant.cuisine}
+              </span>
+            )}
+            {restaurant.location && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" />
+                {restaurant.location}
+              </span>
+            )}
+            <span className="flex items-center gap-0.5">
+              <DollarSign className="w-3.5 h-3.5" />
+              {restaurant.priceRange}
             </span>
           </div>
         </div>
-        <Badge
-          variant={restaurant.wouldReturn ? "default" : "destructive"}
-          className="shrink-0 flex items-center gap-1"
-        >
-          {restaurant.wouldReturn ? (
-            <><ThumbsUp className="w-3 h-3" /> Return</>
-          ) : (
-            <><ThumbsDown className="w-3 h-3" /> Avoid</>
-          )}
+        <Badge variant={v.variant} className="shrink-0 flex items-center gap-1">
+          <v.icon className="w-3 h-3" /> {v.label}
         </Badge>
       </div>
 
       <div className="mt-3 flex items-center gap-4">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Overall</span>
-          <StarRating rating={restaurant.overallRating} size="sm" readonly />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Ambiance</span>
-          <StarRating rating={restaurant.environmentRating} size="sm" readonly />
-        </div>
+        {avgRating > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Avg</span>
+            <StarRating rating={Math.round(avgRating)} size="sm" readonly />
+          </div>
+        )}
+        <span className="text-xs text-muted-foreground">
+          {restaurant.visits.length} visit{restaurant.visits.length !== 1 ? "s" : ""}
+        </span>
+        {latestVisit && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <CalendarDays className="w-3 h-3" />
+            {new Date(latestVisit.date).toLocaleDateString()}
+          </span>
+        )}
       </div>
 
-      {restaurant.dishes.length > 0 && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          {restaurant.dishes.length} dish{restaurant.dishes.length !== 1 ? "es" : ""} rated
-        </p>
+      {topDishes.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {topDishes.map((d) => (
+            <span key={d.name} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs text-accent-foreground">
+              <ThumbsUp className="w-2.5 h-2.5 text-accent" /> {d.name}
+            </span>
+          ))}
+        </div>
       )}
     </motion.div>
   );
