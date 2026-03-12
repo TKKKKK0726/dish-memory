@@ -1,6 +1,6 @@
 import { Restaurant } from "./types";
 
-const STORAGE_KEY = "taste-vault-restaurants";
+const STORAGE_KEY = "dishlog-restaurants";
 
 export function getRestaurants(): Restaurant[] {
   const data = localStorage.getItem(STORAGE_KEY);
