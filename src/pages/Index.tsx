@@ -1,22 +1,27 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getRestaurants } from "@/lib/storage";
-import { seedIfEmpty } from "@/lib/seed";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, UtensilsCrossed } from "lucide-react";
+import { Plus, Search, UtensilsCrossed, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getOverallVerdict, PriceRange } from "@/lib/types";
+import { useAuth } from "@/lib/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
-  seedIfEmpty();
+  const { signOut, user } = useAuth();
 
   const [search, setSearch] = useState("");
   const [verdictFilter, setVerdictFilter] = useState<"all" | "return" | "mixed" | "avoid">("all");
   const [priceFilter, setPriceFilter] = useState<PriceRange | "all">("all");
-  const restaurants = getRestaurants();
+
+  const { data: restaurants = [], isLoading } = useQuery({
+    queryKey: ["restaurants"],
+    queryFn: getRestaurants,
+  });
 
   const filtered = useMemo(() => {
     let result = restaurants;
@@ -35,7 +40,7 @@ const Index = () => {
     if (priceFilter !== "all") {
       result = result.filter((r) => r.priceRange === priceFilter);
     }
-    return result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return result;
   }, [restaurants, search, verdictFilter, priceFilter]);
 
   return (
@@ -46,14 +51,23 @@ const Index = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3"
+            className="flex items-center justify-between gap-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+                <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">DishLog</h1>
+                <p className="text-sm text-muted-foreground">Your personal restaurant memory</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">DishLog</h1>
-              <p className="text-sm text-muted-foreground">Your personal restaurant memory</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground hidden sm:block">{user?.email}</span>
+              <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-muted-foreground">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign out</span>
+              </Button>
             </div>
           </motion.div>
         </div>
@@ -106,7 +120,13 @@ const Index = () => {
         </Button>
 
         {/* List */}
-        {filtered.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-28 rounded-lg border bg-card animate-pulse" />
+            ))}
+          </div>
+        ) : filtered.length > 0 ? (
           <div className="grid gap-3">
             {filtered.map((r, i) => (
               <RestaurantCard key={r.id} restaurant={r} index={i} />
@@ -120,7 +140,9 @@ const Index = () => {
           >
             <UtensilsCrossed className="w-12 h-12 text-muted-foreground/40 mb-4" />
             <h2 className="text-xl font-display font-semibold text-muted-foreground">
-              {search || verdictFilter !== "all" || priceFilter !== "all" ? "No restaurants found" : "No restaurants yet"}
+              {search || verdictFilter !== "all" || priceFilter !== "all"
+                ? "No restaurants found"
+                : "No restaurants yet"}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {search || verdictFilter !== "all" || priceFilter !== "all"

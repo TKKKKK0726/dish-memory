@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRestaurant, saveRestaurant, deleteRestaurant } from "@/lib/storage";
 import { RestaurantForm } from "@/components/RestaurantForm";
 import { VisitForm } from "@/components/VisitForm";
@@ -21,10 +22,30 @@ import { motion } from "framer-motion";
 export default function RestaurantDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [editing, setEditing] = useState(false);
   const [addingVisit, setAddingVisit] = useState(false);
   const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
-  const [restaurant, setRestaurant] = useState(() => getRestaurant(id!));
+
+  const { data: restaurant, isLoading } = useQuery({
+    queryKey: ["restaurant", id],
+    queryFn: () => getRestaurant(id!),
+    enabled: !!id,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["restaurant", id] });
+    queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground text-sm">Loading...</div>
+      </div>
+    );
+  }
 
   if (!restaurant) {
     return (
@@ -51,36 +72,57 @@ export default function RestaurantDetail() {
   };
   const vc = verdictConfig[verdict];
 
-  const handleSaveRestaurant = (updated: Restaurant) => {
-    saveRestaurant(updated);
-    setRestaurant(updated);
-    setEditing(false);
-    toast.success("Restaurant updated!");
+  const handleSaveRestaurant = async (updated: Restaurant) => {
+    try {
+      await saveRestaurant(updated);
+      invalidate();
+      setEditing(false);
+      toast.success("Restaurant updated!");
+    } catch {
+      toast.error("Failed to update restaurant.");
+    }
   };
 
-  const handleSaveVisit = (visit: Visit) => {
-    const updatedVisits = editingVisitId
-      ? restaurant.visits.map((v) => (v.id === editingVisitId ? visit : v))
-      : [...restaurant.visits, visit];
-    const updated = { ...restaurant, visits: updatedVisits, updatedAt: new Date().toISOString() };
-    saveRestaurant(updated);
-    setRestaurant(updated);
-    setAddingVisit(false);
-    setEditingVisitId(null);
-    toast.success(editingVisitId ? "Visit updated!" : "Visit logged!");
+  const handleSaveVisit = async (visit: Visit) => {
+    try {
+      const updatedVisits = editingVisitId
+        ? restaurant.visits.map((v) => (v.id === editingVisitId ? visit : v))
+        : [...restaurant.visits, visit];
+      const updated = { ...restaurant, visits: updatedVisits, updatedAt: new Date().toISOString() };
+      await saveRestaurant(updated);
+      invalidate();
+      setAddingVisit(false);
+      setEditingVisitId(null);
+      toast.success(editingVisitId ? "Visit updated!" : "Visit logged!");
+    } catch {
+      toast.error("Failed to save visit.");
+    }
   };
 
-  const handleDeleteVisit = (visitId: string) => {
-    const updated = { ...restaurant, visits: restaurant.visits.filter((v) => v.id !== visitId), updatedAt: new Date().toISOString() };
-    saveRestaurant(updated);
-    setRestaurant(updated);
-    toast.success("Visit deleted");
+  const handleDeleteVisit = async (visitId: string) => {
+    try {
+      const updated = {
+        ...restaurant,
+        visits: restaurant.visits.filter((v) => v.id !== visitId),
+        updatedAt: new Date().toISOString(),
+      };
+      await saveRestaurant(updated);
+      invalidate();
+      toast.success("Visit deleted");
+    } catch {
+      toast.error("Failed to delete visit.");
+    }
   };
 
-  const handleDelete = () => {
-    deleteRestaurant(restaurant.id);
-    toast.success("Restaurant deleted");
-    navigate("/");
+  const handleDelete = async () => {
+    try {
+      await deleteRestaurant(restaurant.id);
+      queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+      toast.success("Restaurant deleted");
+      navigate("/");
+    } catch {
+      toast.error("Failed to delete restaurant.");
+    }
   };
 
   // Editing restaurant

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { saveRestaurant } from "@/lib/storage";
 import { RestaurantForm } from "@/components/RestaurantForm";
 import { Restaurant } from "@/lib/types";
@@ -8,11 +9,17 @@ import { toast } from "sonner";
 
 export default function AddRestaurant() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const handleSave = (restaurant: Restaurant) => {
-    saveRestaurant(restaurant);
-    toast.success("Restaurant created!");
-    navigate(`/restaurant/${restaurant.id}`);
+  const handleSave = async (restaurant: Restaurant) => {
+    try {
+      await saveRestaurant(restaurant);
+      queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+      toast.success("Restaurant created!");
+      navigate(`/restaurant/${restaurant.id}`);
+    } catch {
+      toast.error("Failed to save restaurant. Please try again.");
+    }
   };
 
   return (
