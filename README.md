@@ -1,73 +1,94 @@
-# Welcome to your Lovable project
+# DishLog
 
-## Project info
+Your personal restaurant memory. Track every dining visit, rate dishes, and know exactly what to reorder — or skip — next time.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## What it does
 
-## How can I edit this code?
+- Add restaurants with cuisine, location, and price range
+- Log visits with overall, ambiance, and service ratings
+- Rate individual dishes and mark them as reorder or avoid
+- See a smart verdict per restaurant (Worth Revisiting / Mixed / Avoid) based on visit history
+- View your best and worst dishes aggregated across visits
 
-There are several ways of editing your application.
+## Tech stack
 
-**Use Lovable**
+- **React + TypeScript** — UI
+- **Vite** — build tool and dev server
+- **Tailwind CSS + shadcn/ui** — styling and components
+- **TanStack React Query** — data fetching and caching
+- **Supabase** — authentication (email/password) and PostgreSQL database
+- **vite-plugin-pwa** — installable as a mobile app via browser
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting started
 
-**Use your preferred IDE**
+### 1. Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 18+ and npm
+- A [Supabase](https://supabase.com) account and project
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 2. Clone and install
 
-Follow these steps:
+```bash
+git clone https://github.com/TKKKKK0726/dish-memory.git
+cd dish-memory
+npm install
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 3. Set up environment variables
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Create a `.env.local` file in the project root (this is gitignored):
 
-# Step 3: Install the necessary dependencies.
-npm i
+```
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Find these in your Supabase dashboard under **Project Settings → API**.
+
+### 4. Set up the database
+
+In the Supabase dashboard, go to **SQL Editor** and run the contents of [`supabase/schema.sql`](supabase/schema.sql).
+
+This creates three tables (`restaurants`, `visits`, `visit_dishes`) with Row Level Security so each user only sees their own data.
+
+### 5. Run locally
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open `http://localhost:8080` in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Optional: Load sample data
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+A seed script with South Bay Area restaurants is included. To use it:
 
-## What technologies are used for this project?
+1. Go to **Supabase → Authentication → Users** and copy your User UID
+2. Open [`supabase/seed.sql`](supabase/seed.sql) and replace `YOUR-USER-UUID-HERE` with your UID
+3. Run the script in the Supabase SQL Editor
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Deployment (Vercel)
 
-## How can I deploy this project?
+```bash
+npx vercel
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+After deploying, add your environment variables in the Vercel dashboard under **Project Settings → Environment Variables**:
 
-## Can I connect a custom domain to my Lovable project?
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Installing as a mobile app (PWA)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Once deployed to a public HTTPS URL:
+
+- **iPhone**: Open in Safari → Share → Add to Home Screen
+- **Android**: Open in Chrome → browser menu → Install App
