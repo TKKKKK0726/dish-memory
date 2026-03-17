@@ -16,8 +16,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    supabase.auth.getSession().then(async ({ data }) => {
+      const hasSession = !!data.session;
+      const remembered = localStorage.getItem("dishlog-remember") === "true";
+      const activeSession = sessionStorage.getItem("dishlog-active") === "true";
+
+      // If there's a persisted session but the user didn't check "Remember me"
+      // and this is a new browser session, sign them out.
+      if (hasSession && !remembered && !activeSession) {
+        await supabase.auth.signOut();
+        setSession(null);
+      } else {
+        setSession(data.session);
+      }
       setLoading(false);
     });
 
@@ -30,13 +41,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const signOut = async () => {
+    localStorage.removeItem("dishlog-remember");
+    sessionStorage.removeItem("dishlog-active");
+    await supabase.auth.signOut();
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user: session?.user ?? null,
         session,
         loading,
-        signOut: () => supabase.auth.signOut(),
+        signOut,
       }}
     >
       {children}

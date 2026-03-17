@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft, Edit, Trash2, MapPin, Utensils, ThumbsUp, ThumbsDown,
-  CalendarDays, Plus, DollarSign, AlertTriangle, Star,
+  CalendarDays, Plus, DollarSign, AlertTriangle, Star, Bookmark, CheckCircle,
 } from "lucide-react";
 import { Restaurant, Visit, getAverageRating, getOverallVerdict, getReorderDishes, getAvoidDishes } from "@/lib/types";
 import { toast } from "sonner";
@@ -78,6 +78,17 @@ export default function RestaurantDetail() {
       invalidate();
       setEditing(false);
       toast.success("Restaurant updated!");
+    } catch {
+      toast.error("Failed to update restaurant.");
+    }
+  };
+
+  const handleMarkAsVisited = async () => {
+    try {
+      await saveRestaurant({ ...restaurant, isWishlist: false });
+      invalidate();
+      toast.success("Moved to visited! Log your first visit below.");
+      setAddingVisit(true);
     } catch {
       toast.error("Failed to update restaurant.");
     }
@@ -164,7 +175,7 @@ export default function RestaurantDetail() {
     );
   }
 
-  // Detail view (hero screen)
+  // Detail view
   return (
     <div className="min-h-screen">
       <header className="border-b bg-card">
@@ -174,7 +185,14 @@ export default function RestaurantDetail() {
           </Button>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{restaurant.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold tracking-tight">{restaurant.name}</h1>
+                {restaurant.isWishlist && (
+                  <Badge variant="outline" className="border-primary/40 text-primary flex items-center gap-1">
+                    <Bookmark className="w-3 h-3" /> Wishlist
+                  </Badge>
+                )}
+              </div>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 {restaurant.cuisine && <span className="flex items-center gap-1"><Utensils className="w-3.5 h-3.5" />{restaurant.cuisine}</span>}
                 {restaurant.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{restaurant.location}</span>}
@@ -186,158 +204,174 @@ export default function RestaurantDetail() {
       </header>
 
       <main className="container max-w-3xl py-6 space-y-6">
-        {/* Verdict Banner */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border bg-card p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <vc.icon className={`w-6 h-6 ${vc.color}`} />
-            <h2 className="font-display text-lg font-semibold">{vc.label}</h2>
-          </div>
-          {avgRating > 0 && (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm text-muted-foreground">Average Rating</span>
-                <StarRating rating={Math.round(avgRating)} readonly size="md" />
-                <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
-              </div>
-              <span className="text-sm text-muted-foreground">{restaurant.visits.length} visit{restaurant.visits.length !== 1 ? "s" : ""}</span>
+        {restaurant.isWishlist ? (
+          /* Wishlist Banner */
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border bg-card p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <Bookmark className="w-6 h-6 text-primary" />
+              <h2 className="font-display text-lg font-semibold">On Your Wishlist</h2>
             </div>
-          )}
-          {restaurant.notes && <p className="mt-3 text-sm text-muted-foreground">{restaurant.notes}</p>}
-        </motion.div>
-
-        {/* Best Dishes (Reorder) */}
-        {reorderDishes.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-            <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-              <ThumbsUp className="w-5 h-5 text-accent" /> Best Dishes — Reorder
-            </h2>
-            <div className="grid gap-2">
-              {reorderDishes.map((d) => (
-                <div key={d.name} className="rounded-lg border bg-card p-4 flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">{d.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">ordered {d.count}×</span>
-                  </div>
-                  <StarRating rating={Math.round(d.avgRating)} readonly size="sm" />
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Avoid Dishes */}
-        {avoidDishes.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-              <ThumbsDown className="w-5 h-5 text-destructive" /> Skip Next Time
-            </h2>
-            <div className="grid gap-2">
-              {avoidDishes.map((d) => (
-                <div key={d.name} className="rounded-lg border bg-card p-4 flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">{d.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">tried {d.count}×</span>
-                  </div>
-                  <StarRating rating={Math.round(d.avgRating)} readonly size="sm" />
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Visit History */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-lg font-semibold">Visit History</h2>
-            <Button size="sm" onClick={() => setAddingVisit(true)} className="gap-1">
-              <Plus className="w-4 h-4" /> Log Visit
+            {restaurant.notes && <p className="text-sm text-muted-foreground mb-4">{restaurant.notes}</p>}
+            <Button onClick={handleMarkAsVisited} className="gap-2">
+              <CheckCircle className="w-4 h-4" /> I've Been Here — Log a Visit
             </Button>
-          </div>
-
-          {sortedVisits.length > 0 ? (
-            <div className="grid gap-3">
-              {sortedVisits.map((visit) => (
-                <div key={visit.id} className="rounded-lg border bg-card p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <CalendarDays className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{new Date(visit.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
-                      <Badge variant={visit.wouldReturn ? "default" : "destructive"} className="text-xs">
-                        {visit.wouldReturn ? "Would Return" : "Avoid"}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => setEditingVisitId(visit.id)} className="h-7 px-2 text-xs">
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive">
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete this visit?</AlertDialogTitle>
-                            <AlertDialogDescription>This will remove the visit and all its dish ratings.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteVisit(visit.id)}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
+          </motion.div>
+        ) : (
+          <>
+            {/* Verdict Banner */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border bg-card p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <vc.icon className={`w-6 h-6 ${vc.color}`} />
+                <h2 className="font-display text-lg font-semibold">{vc.label}</h2>
+              </div>
+              {avgRating > 0 && (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-muted-foreground">Average Rating</span>
+                    <StarRating rating={Math.round(avgRating)} readonly size="md" />
+                    <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
                   </div>
-
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground">Overall</span>
-                      <StarRating rating={visit.overallRating} readonly size="sm" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground">Ambiance</span>
-                      <StarRating rating={visit.ambianceRating} readonly size="sm" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground">Service</span>
-                      <StarRating rating={visit.serviceRating} readonly size="sm" />
-                    </div>
-                  </div>
-
-                  {visit.notes && <p className="text-sm text-muted-foreground">{visit.notes}</p>}
-
-                  {visit.dishes.length > 0 && (
-                    <div className="border-t pt-3 space-y-2">
-                      {visit.dishes.map((dish) => (
-                        <div key={dish.id} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            {dish.wouldReorder ? (
-                              <ThumbsUp className="w-3.5 h-3.5 text-accent" />
-                            ) : (
-                              <ThumbsDown className="w-3.5 h-3.5 text-destructive" />
-                            )}
-                            <span className="font-medium">{dish.dishName}</span>
-                            {dish.notes && <span className="text-muted-foreground">— {dish.notes}</span>}
-                          </div>
-                          <StarRating rating={dish.rating} readonly size="sm" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <span className="text-sm text-muted-foreground">{restaurant.visits.length} visit{restaurant.visits.length !== 1 ? "s" : ""}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
-              <CalendarDays className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No visits logged yet</p>
-              <Button size="sm" variant="outline" className="mt-3 gap-1" onClick={() => setAddingVisit(true)}>
-                <Plus className="w-4 h-4" /> Log Your First Visit
-              </Button>
-            </div>
-          )}
-        </motion.div>
+              )}
+              {restaurant.notes && <p className="mt-3 text-sm text-muted-foreground">{restaurant.notes}</p>}
+            </motion.div>
+
+            {/* Best Dishes */}
+            {reorderDishes.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
+                  <ThumbsUp className="w-5 h-5 text-accent" /> Best Dishes — Reorder
+                </h2>
+                <div className="grid gap-2">
+                  {reorderDishes.map((d) => (
+                    <div key={d.name} className="rounded-lg border bg-card p-4 flex items-center justify-between">
+                      <div>
+                        <span className="font-medium">{d.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">ordered {d.count}×</span>
+                      </div>
+                      <StarRating rating={Math.round(d.avgRating)} readonly size="sm" />
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Avoid Dishes */}
+            {avoidDishes.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
+                  <ThumbsDown className="w-5 h-5 text-destructive" /> Skip Next Time
+                </h2>
+                <div className="grid gap-2">
+                  {avoidDishes.map((d) => (
+                    <div key={d.name} className="rounded-lg border bg-card p-4 flex items-center justify-between">
+                      <div>
+                        <span className="font-medium">{d.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">tried {d.count}×</span>
+                      </div>
+                      <StarRating rating={Math.round(d.avgRating)} readonly size="sm" />
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Visit History */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display text-lg font-semibold">Visit History</h2>
+                <Button size="sm" onClick={() => setAddingVisit(true)} className="gap-1">
+                  <Plus className="w-4 h-4" /> Log Visit
+                </Button>
+              </div>
+
+              {sortedVisits.length > 0 ? (
+                <div className="grid gap-3">
+                  {sortedVisits.map((visit) => (
+                    <div key={visit.id} className="rounded-lg border bg-card p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">{new Date(visit.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                          <Badge variant={visit.wouldReturn ? "default" : "destructive"} className="text-xs">
+                            {visit.wouldReturn ? "Would Return" : "Avoid"}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingVisitId(visit.id)} className="h-7 px-2 text-xs">
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this visit?</AlertDialogTitle>
+                                <AlertDialogDescription>This will remove the visit and all its dish ratings.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteVisit(visit.id)}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">Overall</span>
+                          <StarRating rating={visit.overallRating} readonly size="sm" />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">Ambiance</span>
+                          <StarRating rating={visit.ambianceRating} readonly size="sm" />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">Service</span>
+                          <StarRating rating={visit.serviceRating} readonly size="sm" />
+                        </div>
+                      </div>
+
+                      {visit.notes && <p className="text-sm text-muted-foreground">{visit.notes}</p>}
+
+                      {visit.dishes.length > 0 && (
+                        <div className="border-t pt-3 space-y-2">
+                          {visit.dishes.map((dish) => (
+                            <div key={dish.id} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                {dish.wouldReorder ? (
+                                  <ThumbsUp className="w-3.5 h-3.5 text-accent" />
+                                ) : (
+                                  <ThumbsDown className="w-3.5 h-3.5 text-destructive" />
+                                )}
+                                <span className="font-medium">{dish.dishName}</span>
+                                {dish.notes && <span className="text-muted-foreground">— {dish.notes}</span>}
+                              </div>
+                              <StarRating rating={dish.rating} readonly size="sm" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
+                  <CalendarDays className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No visits logged yet</p>
+                  <Button size="sm" variant="outline" className="mt-3 gap-1" onClick={() => setAddingVisit(true)}>
+                    <Plus className="w-4 h-4" /> Log Your First Visit
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 pt-4 border-t">

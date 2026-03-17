@@ -13,6 +13,7 @@ create table restaurants (
   location text,
   price_range text check (price_range in ('$', '$$', '$$$', '$$$$')),
   notes text,
+  is_wishlist boolean default false not null,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null
 );

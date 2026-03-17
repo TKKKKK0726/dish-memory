@@ -38,6 +38,7 @@ export interface Restaurant {
   visits: Visit[];
   createdAt: string;
   updatedAt: string;
+  isWishlist?: boolean;
 }
 
 // Computed helpers

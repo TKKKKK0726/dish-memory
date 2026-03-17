@@ -1,7 +1,7 @@
 import { Restaurant, getAverageRating, getOverallVerdict, getReorderDishes, getLatestVisit } from "@/lib/types";
 import { StarRating } from "./StarRating";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Utensils, ThumbsUp, ThumbsDown, AlertTriangle, DollarSign, CalendarDays } from "lucide-react";
+import { MapPin, Utensils, ThumbsUp, ThumbsDown, AlertTriangle, DollarSign, CalendarDays, Bookmark } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -58,37 +58,51 @@ export function RestaurantCard({ restaurant, index }: RestaurantCardProps) {
             </span>
           </div>
         </div>
-        <Badge variant={v.variant} className="shrink-0 flex items-center gap-1">
-          <v.icon className="w-3 h-3" /> {v.label}
-        </Badge>
-      </div>
-
-      <div className="mt-3 flex items-center gap-4">
-        {avgRating > 0 && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Avg</span>
-            <StarRating rating={Math.round(avgRating)} size="sm" readonly />
-          </div>
-        )}
-        <span className="text-xs text-muted-foreground">
-          {restaurant.visits.length} visit{restaurant.visits.length !== 1 ? "s" : ""}
-        </span>
-        {latestVisit && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <CalendarDays className="w-3 h-3" />
-            {new Date(latestVisit.date).toLocaleDateString()}
-          </span>
+        {restaurant.isWishlist ? (
+          <Badge variant="outline" className="shrink-0 flex items-center gap-1 border-primary/40 text-primary">
+            <Bookmark className="w-3 h-3" /> Wishlist
+          </Badge>
+        ) : (
+          <Badge variant={v.variant} className="shrink-0 flex items-center gap-1">
+            <v.icon className="w-3 h-3" /> {v.label}
+          </Badge>
         )}
       </div>
 
-      {topDishes.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {topDishes.map((d) => (
-            <span key={d.name} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs text-accent-foreground">
-              <ThumbsUp className="w-2.5 h-2.5 text-accent" /> {d.name}
+      {restaurant.isWishlist ? (
+        <p className="mt-3 text-xs text-muted-foreground italic">
+          {restaurant.notes || "Want to try this place"}
+        </p>
+      ) : (
+        <>
+          <div className="mt-3 flex items-center gap-4">
+            {avgRating > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Avg</span>
+                <StarRating rating={Math.round(avgRating)} size="sm" readonly />
+              </div>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {restaurant.visits.length} visit{restaurant.visits.length !== 1 ? "s" : ""}
             </span>
-          ))}
-        </div>
+            {latestVisit && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CalendarDays className="w-3 h-3" />
+                {new Date(latestVisit.date).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+
+          {topDishes.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {topDishes.map((d) => (
+                <span key={d.name} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs text-accent-foreground">
+                  <ThumbsUp className="w-2.5 h-2.5 text-accent" /> {d.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </motion.div>
   );

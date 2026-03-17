@@ -40,6 +40,7 @@ function mapRestaurant(r: Record<string, unknown>): Restaurant {
     visits: ((r.visits as Record<string, unknown>[]) || []).map(mapVisit),
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
+    isWishlist: (r.is_wishlist as boolean) ?? false,
   };
 }
 
@@ -77,6 +78,7 @@ export async function saveRestaurant(restaurant: Restaurant): Promise<void> {
     location: restaurant.location,
     price_range: restaurant.priceRange,
     notes: restaurant.notes,
+    is_wishlist: restaurant.isWishlist ?? false,
     created_at: restaurant.createdAt,
     updated_at: new Date().toISOString(),
   });

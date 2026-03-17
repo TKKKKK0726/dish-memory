@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Save } from "lucide-react";
+import { Save, Bookmark } from "lucide-react";
 
 interface RestaurantFormProps {
   initial?: Restaurant;
@@ -18,6 +18,7 @@ export function RestaurantForm({ initial, onSave, onCancel }: RestaurantFormProp
   const [location, setLocation] = useState(initial?.location ?? "");
   const [priceRange, setPriceRange] = useState<PriceRange>(initial?.priceRange ?? "$$");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [isWishlist, setIsWishlist] = useState(initial?.isWishlist ?? false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +35,7 @@ export function RestaurantForm({ initial, onSave, onCancel }: RestaurantFormProp
       visits: initial?.visits ?? [],
       createdAt: initial?.createdAt ?? now,
       updatedAt: now,
+      isWishlist,
     });
   };
 
@@ -77,6 +79,22 @@ export function RestaurantForm({ initial, onSave, onCancel }: RestaurantFormProp
         <Label htmlFor="notes">Notes</Label>
         <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="General impressions, location details, reservation tips..." rows={3} />
       </div>
+
+      <label className="flex items-center gap-3 cursor-pointer rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+        <input
+          type="checkbox"
+          checked={isWishlist}
+          onChange={(e) => setIsWishlist(e.target.checked)}
+          className="w-4 h-4 accent-primary"
+        />
+        <div className="flex items-center gap-2">
+          <Bookmark className="w-4 h-4 text-primary" />
+          <div>
+            <p className="text-sm font-medium">Add to Wishlist</p>
+            <p className="text-xs text-muted-foreground">I haven't been here yet — just want to track it</p>
+          </div>
+        </div>
+      </label>
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" className="gap-2">
