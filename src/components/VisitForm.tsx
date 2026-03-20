@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Visit, VisitDish } from "@/lib/types";
+import { uploadDishImage } from "@/lib/storage";
 import { StarRating } from "./StarRating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Save, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Plus, Trash2, Save, ThumbsUp, ThumbsDown, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface VisitFormProps {
@@ -24,6 +25,8 @@ export function VisitForm({ restaurantId, initial, onSave, onCancel }: VisitForm
   const [wouldReturn, setWouldReturn] = useState(initial?.wouldReturn ?? true);
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [dishes, setDishes] = useState<VisitDish[]>(initial?.dishes ?? []);
+  const [pendingImages, setPendingImages] = useState<Record<string, File>>({});
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
 
   const addDish = () => {
     setDishes([
@@ -40,9 +43,25 @@ export function VisitForm({ restaurantId, initial, onSave, onCancel }: VisitForm
     setDishes(dishes.filter((d) => d.id !== id));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageSelect = (dishId: string, file: File) => {
+    setPendingImages((prev) => ({ ...prev, [dishId]: file }));
+    const url = URL.createObjectURL(file);
+    setPreviewUrls((prev) => ({ ...prev, [dishId]: url }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const now = new Date().toISOString();
+    const filtered = dishes.filter((d) => d.dishName.trim());
+    const uploadedDishes = await Promise.all(
+      filtered.map(async (d) => {
+        if (pendingImages[d.id]) {
+          const url = await uploadDishImage(d.id, pendingImages[d.id]);
+          return { ...d, imageUrl: url };
+        }
+        return d;
+      })
+    );
     onSave({
       id: initial?.id ?? crypto.randomUUID(),
       restaurantId,
@@ -52,7 +71,7 @@ export function VisitForm({ restaurantId, initial, onSave, onCancel }: VisitForm
       serviceRating,
       wouldReturn,
       notes: notes.trim(),
-      dishes: dishes.filter((d) => d.dishName.trim()),
+      dishes: uploadedDishes,
       createdAt: initial?.createdAt ?? now,
     });
   };
@@ -153,6 +172,30 @@ export function VisitForm({ restaurantId, initial, onSave, onCancel }: VisitForm
                     onChange={(e) => updateDish(dish.id, { notes: e.target.value })}
                     placeholder="Notes about this dish..."
                   />
+                  <div className="flex items-center gap-3">
+                    {(previewUrls[dish.id] || dish.imageUrl) && (
+                      <img
+                        src={previewUrls[dish.id] || dish.imageUrl}
+                        alt="dish preview"
+                        className="w-16 h-16 rounded object-cover border"
+                      />
+                    )}
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageSelect(dish.id, file);
+                        }}
+                      />
+                      <span className="inline-flex items-center gap-1.5 rounded border px-2 py-1 text-xs text-muted-foreground hover:bg-secondary transition-colors">
+                        <Camera className="w-3.5 h-3.5" />
+                        {previewUrls[dish.id] || dish.imageUrl ? "Change photo" : "Add photo"}
+                      </span>
+                    </label>
+                  </div>
                 </div>
                 <Button type="button" variant="ghost" size="icon" onClick={() => removeDish(dish.id)} className="text-destructive shrink-0">
                   <Trash2 className="w-4 h-4" />

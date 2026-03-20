@@ -195,7 +195,16 @@ export default function RestaurantDetail() {
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 {restaurant.cuisine && <span className="flex items-center gap-1"><Utensils className="w-3.5 h-3.5" />{restaurant.cuisine}</span>}
-                {restaurant.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{restaurant.location}</span>}
+                {restaurant.location && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.location)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />{restaurant.location}
+                  </a>
+                )}
                 <span className="flex items-center gap-0.5"><DollarSign className="w-3.5 h-3.5" />{restaurant.priceRange}</span>
               </div>
             </div>
@@ -342,12 +351,15 @@ export default function RestaurantDetail() {
                       {visit.dishes.length > 0 && (
                         <div className="border-t pt-3 space-y-2">
                           {visit.dishes.map((dish) => (
-                            <div key={dish.id} className="flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-2">
+                            <div key={dish.id} className="flex items-center justify-between text-sm gap-3">
+                              {dish.imageUrl && (
+                                <img src={dish.imageUrl} alt={dish.dishName} className="w-12 h-12 rounded object-cover border shrink-0" />
+                              )}
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
                                 {dish.wouldReorder ? (
-                                  <ThumbsUp className="w-3.5 h-3.5 text-accent" />
+                                  <ThumbsUp className="w-3.5 h-3.5 text-accent shrink-0" />
                                 ) : (
-                                  <ThumbsDown className="w-3.5 h-3.5 text-destructive" />
+                                  <ThumbsDown className="w-3.5 h-3.5 text-destructive shrink-0" />
                                 )}
                                 <span className="font-medium">{dish.dishName}</span>
                                 {dish.notes && <span className="text-muted-foreground">— {dish.notes}</span>}

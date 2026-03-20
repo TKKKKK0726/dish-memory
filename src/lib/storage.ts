@@ -11,6 +11,7 @@ function mapVisitDish(vd: Record<string, unknown>): VisitDish {
     rating: vd.rating as number,
     wouldReorder: vd.would_reorder as boolean,
     notes: (vd.notes as string) || "",
+    imageUrl: (vd.image_url as string) || undefined,
   };
 }
 
@@ -115,6 +116,7 @@ export async function saveRestaurant(restaurant: Restaurant): Promise<void> {
           rating: d.rating,
           would_reorder: d.wouldReorder,
           notes: d.notes,
+          image_url: d.imageUrl || null,
         }))
       );
       if (dishError) throw dishError;
@@ -136,4 +138,15 @@ export async function getPublicRestaurants(userId: string): Promise<Restaurant[]
 export async function deleteRestaurant(id: string): Promise<void> {
   const { error } = await supabase.from("restaurants").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function uploadDishImage(dishId: string, file: File): Promise<string> {
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const path = `${dishId}.${ext}`;
+  const { error } = await supabase.storage
+    .from("dish-images")
+    .upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from("dish-images").getPublicUrl(path);
+  return data.publicUrl;
 }

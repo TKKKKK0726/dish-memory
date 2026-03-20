@@ -47,10 +47,16 @@ export function RestaurantCard({ restaurant, index }: RestaurantCardProps) {
               </span>
             )}
             {restaurant.location && (
-              <span className="flex items-center gap-1">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.location)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MapPin className="w-3.5 h-3.5" />
                 {restaurant.location}
-              </span>
+              </a>
             )}
             <span className="flex items-center gap-0.5">
               <DollarSign className="w-3.5 h-3.5" />

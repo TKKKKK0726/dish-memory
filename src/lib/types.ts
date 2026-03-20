@@ -13,6 +13,7 @@ export interface VisitDish {
   rating: number; // 1-5
   wouldReorder: boolean; // true = reorder, false = avoid
   notes: string;
+  imageUrl?: string;
 }
 
 export interface Visit {
