@@ -5,7 +5,8 @@ import { RestaurantCard } from "@/components/RestaurantCard";
 import { StarRating } from "@/components/StarRating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, UtensilsCrossed, LogOut, Bookmark, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Plus, Search, UtensilsCrossed, LogOut, Bookmark, ThumbsUp, ThumbsDown, Share2 } from "lucide-react";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getOverallVerdict, PriceRange } from "@/lib/types";
@@ -26,6 +27,13 @@ interface DishResult {
 const Index = () => {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/share/${user?.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success("Share link copied to clipboard!");
+    });
+  };
 
   const [tab, setTab] = useState<Tab>("visited");
   const [search, setSearch] = useState("");
@@ -145,6 +153,10 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground hidden sm:block">{user?.email}</span>
+              <Button variant="ghost" size="sm" onClick={handleShare} className="gap-1.5 text-muted-foreground">
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Share</span>
+              </Button>
               <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-muted-foreground">
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign out</span>

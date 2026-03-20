@@ -9,6 +9,7 @@ import AddRestaurant from "./pages/AddRestaurant.tsx";
 import RestaurantDetail from "./pages/RestaurantDetail.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Auth from "./pages/Auth.tsx";
+import Share from "./pages/Share.tsx";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +45,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <ProtectedRoutes />
+          <Routes>
+            <Route path="/share/:userId" element={<Share />} />
+            <Route path="*" element={<ProtectedRoutes />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

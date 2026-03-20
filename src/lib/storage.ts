@@ -122,6 +122,17 @@ export async function saveRestaurant(restaurant: Restaurant): Promise<void> {
   }
 }
 
+export async function getPublicRestaurants(userId: string): Promise<Restaurant[]> {
+  const { data, error } = await supabase
+    .from("restaurants")
+    .select("*, visits(*, visit_dishes(*))")
+    .eq("user_id", userId)
+    .eq("is_wishlist", false)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map(mapRestaurant);
+}
+
 export async function deleteRestaurant(id: string): Promise<void> {
   const { error } = await supabase.from("restaurants").delete().eq("id", id);
   if (error) throw error;
